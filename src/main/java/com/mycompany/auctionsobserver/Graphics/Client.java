@@ -5,9 +5,13 @@
 package com.mycompany.auctionsobserver.Graphics;
 
 import com.mycompany.auctionsobserver.Auction;
+import com.mycompany.auctionsobserver.Observable;
 import com.mycompany.auctionsobserver.Person;
 import com.mycompany.auctionsobserver.Product;
+import java.awt.Component;
 import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -25,7 +29,7 @@ import javax.swing.JOptionPane;
  *
  * @author Fabo
  */
-public class Client extends javax.swing.JFrame {
+public class Client extends javax.swing.JFrame implements Observable {
 
     /**
      * Creates new form GUI
@@ -56,8 +60,7 @@ public class Client extends javax.swing.JFrame {
         auctionPanel = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         addAuctionButton = new javax.swing.JButton();
-        bidAuctionButton = new javax.swing.JButton();
-        jButton1 = new javax.swing.JButton();
+        auctionManagerButton = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -82,9 +85,12 @@ public class Client extends javax.swing.JFrame {
             }
         });
 
-        bidAuctionButton.setText("Bid for an auction");
-
-        jButton1.setText("Manage your auctions");
+        auctionManagerButton.setText("Manage your auctions");
+        auctionManagerButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                auctionManagerButtonActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -96,12 +102,10 @@ public class Client extends javax.swing.JFrame {
                     .addComponent(auctionPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jLabel1)
-                        .addGap(78, 78, 78)
+                        .addGap(196, 196, 196)
                         .addComponent(addAuctionButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(bidAuctionButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButton1)
+                        .addGap(18, 18, 18)
+                        .addComponent(auctionManagerButton)
                         .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
@@ -113,8 +117,7 @@ public class Client extends javax.swing.JFrame {
                     .addComponent(jLabel1)
                     .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(addAuctionButton, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(bidAuctionButton, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(auctionManagerButton, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(auctionPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
@@ -133,17 +136,18 @@ public class Client extends javax.swing.JFrame {
                
         try {
             outputStream.writeInt(ADD_AN_AUCTION);
-            outputStream.flush();
             outputStream.writeObject(currentClient);
-            outputStream.flush();
             outputStream.writeObject(product);
-            outputStream.flush();
             outputStream.writeObject(new Auction(currentClient, product));
             outputStream.flush();
         } catch (IOException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_addAuctionButtonActionPerformed
+
+    private void auctionManagerButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_auctionManagerButtonActionPerformed
+        
+    }//GEN-LAST:event_auctionManagerButtonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -188,10 +192,12 @@ public class Client extends javax.swing.JFrame {
             }
         });
     }
-    
-    public void showAuctions(){
-        
+
+    @Override
+    public void auctionWon(Auction auction) {
+        currentClient.update(auction);
     }
+    
     
     private class ClientHandler implements Runnable {
         @Override
@@ -202,7 +208,7 @@ public class Client extends javax.swing.JFrame {
                     
                     switch (option){
                         
-                        case (ADD_AN_AUCTION):
+                        case (ADD_AN_AUCTION) -> {
                             Person auctioneer = (Person)inputStream.readObject();
                             Product product = (Product)inputStream.readObject();
                             Auction auction = (Auction)inputStream.readObject();
@@ -211,13 +217,126 @@ public class Client extends javax.swing.JFrame {
                             
                             JButton auctionButton = new JButton();
                             auctionButton.setText("Auctioneer: " + auctioneer.getName() + ". Product name: " + product.getName() + ". Price: " + product.getStartPrice());
+                            auctionButton.putClientProperty("productName", product.getName());
+                            auctionButton.putClientProperty("Owner", auctioneer.getName());
+                            auctionButton.putClientProperty("Status", "IN PROGRESS");
+                            auctionButton.putClientProperty("Top Bidder", "none");
+                            auctionButton.putClientProperty("Price", product.getStartPrice());
+                            
+                            auctionButton.addActionListener(new ActionListener() {
+                                @Override
+                                public void actionPerformed(ActionEvent e){
+                                    String owner = (String) auctionButton.getClientProperty("Owner");
+                                    String productName = (String) auctionButton.getClientProperty("productName");
+                                    String topBidder = (String) auctionButton.getClientProperty("Top Bidder");
+                                    int price = (int) auctionButton.getClientProperty("Price");
+                                    
+                                    try {
+                                        if (auctionButton.getClientProperty("Status").equals("ENDED")){
+                                            JOptionPane.showMessageDialog(null, "This auction has ended");
+                                        } else {
+                                        
+                                            if (owner.equals(currentClient.getName())){
+                                                int option = JOptionPane.showConfirmDialog(null,
+                                                        "End this auction?", "Confirmation", JOptionPane.YES_NO_OPTION);
+
+                                                if (option == JOptionPane.YES_OPTION){                                              
+                                                    outputStream.writeInt(AUCTION_END);
+                                                    outputStream.writeUTF(productName);
+                                                    outputStream.writeUTF("ENDED");
+                                                    outputStream.writeObject(auction);
+                                                    outputStream.writeUTF(topBidder);
+                                                    outputStream.writeInt(price);
+                                                    outputStream.flush();
+                                                }
+                                            } else {
+
+                                                int newPrice = Integer.parseInt(JOptionPane.showInputDialog("Enter your bid:"));
+
+                                                if (newPrice > price){
+                                                    product.setStartPrice(newPrice);
+                                                    auctionButton.putClientProperty("Price", newPrice);
+                                                    auction.setTopBidder(currentClient);
+
+                                                    auctionButton.setText("Auctioneer: " + auctioneer.getName() + ". Product name: " +
+                                                            product.getName() + ". Price: " + newPrice);
+
+                                                    outputStream.writeInt(BID_FOR_AN_AUCTION);
+                                                    outputStream.writeInt(newPrice);
+                                                    outputStream.writeObject(currentClient);
+                                                    outputStream.writeObject(product);
+                                                    outputStream.writeObject(auction);
+                                                    outputStream.writeObject(auctioneer);
+                                                    outputStream.writeUTF(productName);
+                                                    outputStream.flush();   
+
+                                                    } else {
+                                                    JOptionPane.showMessageDialog(null, "Bid must be higher than the actual bid");
+                                                }
+                                            }
+                                        
+                                        } 
+                                    } catch (IOException ex) {
+                                        Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+                                    }
+                                }                         
+                            });
                             auctionPanel.add(auctionButton);
                             auctionPanel.revalidate();
                             auctionPanel.repaint();
-                            break;
+                        }
                             
-                        case (BID_FOR_AN_AUCTION):
-                            break;
+                        case (BID_FOR_AN_AUCTION) -> {
+                            
+                            Product prod = (Product)inputStream.readObject();
+                            Person bidder = (Person)inputStream.readObject();
+                            Auction auctionBidded = (Auction)inputStream.readObject();
+                            Person auctionOwner = (Person)inputStream.readObject();
+                            int price = inputStream.readInt();
+                            String pKey = inputStream.readUTF();                           
+                                                       
+                            prod.setStartPrice(price);
+                            auctionBidded.setTopBidder(bidder);
+
+                            for (Component comp : auctionPanel.getComponents()){
+
+                                JButton button = (JButton) comp;
+                                String buttonProductName = (String) button.getClientProperty("productName");
+
+                                if (buttonProductName.equals(pKey)) {
+                                    button.setText("Auctioneer: " + auctionOwner.getName() + ". Product name: " + prod.getName() + ". Price: " + price);
+                                    button.putClientProperty("Top Bidder", bidder.getName());
+
+                                    break;  
+                                }                               
+                            }                    
+                        }
+                        
+                        case (AUCTION_END) -> {
+                            
+                            String pKey = inputStream.readUTF();
+                            String status = inputStream.readUTF();
+                            Auction auction = (Auction)inputStream.readObject();
+                            String winner = inputStream.readUTF();
+                            int price = inputStream.readInt();
+                            
+                            for (Component comp : auctionPanel.getComponents()){
+
+                                JButton button = (JButton) comp;
+                                String buttonProductName = (String) button.getClientProperty("productName");
+                                String topBidder = (String) button.getClientProperty("Top Bidder");
+
+                                if (buttonProductName.equals(pKey)) {
+                                    button.putClientProperty("Status", status);
+                                    button.setText("Auctioneer: " + auction.getAuctioneerName() + ". Product name: " + auction.getAuctionProductName() + ". Price: " + price
+                                    + " Winner: " + topBidder);
+                                    break;  
+                                }
+                                if (currentClient.getName().equals(winner)){
+                                    auctionWon(auction);
+                                }
+                            }       
+                        }
                     }
                 }
             } catch (IOException e) {
@@ -235,15 +354,15 @@ public class Client extends javax.swing.JFrame {
     
     private final static int ADD_AN_AUCTION = 1;
     private final static int BID_FOR_AN_AUCTION = 2;
+    private final static int AUCTION_END = 3;
     
-    ObjectOutputStream outputStream;
-    ObjectInputStream inputStream;
+    private ObjectOutputStream outputStream;
+    private ObjectInputStream inputStream;
     private Socket socket;
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton addAuctionButton;
+    private javax.swing.JButton auctionManagerButton;
     private static javax.swing.JPanel auctionPanel;
-    private javax.swing.JButton bidAuctionButton;
-    private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
     // End of variables declaration//GEN-END:variables
 }

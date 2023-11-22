@@ -6,12 +6,13 @@ package com.mycompany.auctionsobserver;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import javax.swing.JOptionPane;
 
 /**
  *
  * @author Fabo
  */
-public class Person implements Serializable{
+public class Person implements Serializable, Observer{
     
     private String name;
     private ArrayList<Auction> joinedAuctions = new ArrayList<>();
@@ -44,6 +45,12 @@ public class Person implements Serializable{
 
     public Person(String name) {
         this.name = name;
+    }
+
+    @Override
+    public void update(Auction auction) {
+        JOptionPane.showMessageDialog(null, this.getName() + " you have won the auction for " + auction.getAuctionProductName() + " for a total of "
+        + auction.getActualPrice());
     }
     
     

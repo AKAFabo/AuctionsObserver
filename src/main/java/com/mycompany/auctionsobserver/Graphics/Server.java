@@ -28,6 +28,7 @@ public class Server {
     
     private final static int ADD_AN_AUCTION = 1;
     private final static int BID_FOR_AN_AUCTION = 2;
+    private final static int AUCTION_END = 3;
     
     public Server(int port) {
         try {
@@ -82,10 +83,25 @@ public class Server {
                         }
                            
                         case(BID_FOR_AN_AUCTION) -> {
+
+                            int newPrice = inputStream.readInt();
                             Person bidder = (Person)inputStream.readObject();
+                            Product product = (Product)inputStream.readObject();
                             Auction auctionBidded = (Auction)inputStream.readObject();
-                            int bid = inputStream.readInt();
-                            bidForAuction(bidder, auctionBidded, bid);
+                            Person auctioneer = (Person)inputStream.readObject();
+                            String prodName = inputStream.readUTF();
+                            
+                            bidForAuction(product, bidder, auctionBidded, newPrice, prodName, auctioneer);
+                        }
+                        
+                        case (AUCTION_END) -> {
+                            String prodName = inputStream.readUTF();
+                            String status = inputStream.readUTF();
+                            Auction auction = (Auction)inputStream.readObject();
+                            String winner = inputStream.readUTF();
+                            int price = inputStream.readInt();
+                            
+                            endAuction(prodName, status, auction, winner, price);
                         }
                     }
                           
@@ -103,34 +119,49 @@ public class Server {
         for (ObjectOutputStream client : clients) {
             try {
                 client.writeInt(ADD_AN_AUCTION);
-                client.flush();
                 client.writeObject(auctioneer);
-                client.flush();
                 client.writeObject(product);
-                client.flush();
                 client.writeObject(auction);
+                client.flush();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
     
-    public static void bidForAuction(Person bidder, Auction auctionBidded, int bid){
+    public static void bidForAuction(Product product, Person bidder, Auction auctionBidded, int newPrice, String prodName, Person auctioneer){
         
         for (ObjectOutputStream client : clients) {
             try {
                 client.writeInt(BID_FOR_AN_AUCTION);
-                client.flush();
+                client.writeObject(product);
                 client.writeObject(bidder);
-                client.flush();
                 client.writeObject(auctionBidded);
-                client.flush();
-                client.writeInt(bid);
+                client.writeObject(auctioneer);
+                client.writeInt(newPrice);    
+                client.writeUTF(prodName);
                 client.flush();             
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
         
+    }
+    
+    public static void endAuction(String prodName, String status, Auction auction, String winner, int price){
+        
+        for (ObjectOutputStream client : clients){
+            try {
+                client.writeInt(AUCTION_END);
+                client.writeUTF(prodName);
+                client.writeUTF(status);
+                client.writeObject(auction);
+                client.writeUTF(winner);
+                client.writeInt(price);
+                client.flush();
+            } catch (IOException ex) {
+                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
 }

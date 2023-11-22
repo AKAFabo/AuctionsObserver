@@ -31,6 +31,10 @@ public class Auction implements Serializable{
     public String getAuctionName() {
         return auctionName;
     }
+    
+    public String getAuctionProductName(){
+        return product.getName();
+    }
 
     public void setAuctionName(String auctionName) {
         this.auctionName = auctionName;
@@ -71,8 +75,9 @@ public class Auction implements Serializable{
     public Person getTopBidder() {
         return topBidder;
     }
+    
 
-    public void setWinner(Person topBidder) {
+    public void setTopBidder(Person topBidder) {
         this.topBidder = topBidder;
     }
     
