@@ -1,0 +1,10 @@
+com\mycompany\auctionsobserver\Auction.class
+com\mycompany\auctionsobserver\Graphics\Client.class
+com\mycompany\auctionsobserver\Graphics\Client$1.class
+com\mycompany\auctionsobserver\Main.class
+com\mycompany\auctionsobserver\Person.class
+com\mycompany\auctionsobserver\Graphics\Client$2.class
+com\mycompany\auctionsobserver\Graphics\Server.class
+com\mycompany\auctionsobserver\Product.class
+com\mycompany\auctionsobserver\Graphics\Server$ClientHandler.class
+com\mycompany\auctionsobserver\Graphics\Client$ClientHandler.class
