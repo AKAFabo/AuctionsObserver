@@ -9,7 +9,6 @@ import com.mycompany.auctionsobserver.Observable;
 import com.mycompany.auctionsobserver.Person;
 import com.mycompany.auctionsobserver.Product;
 import java.awt.Component;
-import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
@@ -17,13 +16,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
+import javax.swing.UIManager;
 
 /**
  *
@@ -234,9 +232,16 @@ public class Client extends javax.swing.JFrame implements Observable {
                                     try {
                                         if (auctionButton.getClientProperty("Status").equals("ENDED")){
                                             JOptionPane.showMessageDialog(null, "This auction has ended");
+                                        } else if (auctionButton.getClientProperty("Status").equals("CANCELED")){
+                                            JOptionPane.showMessageDialog(null, "This auction has been canceled");
+                                            
                                         } else {
                                         
                                             if (owner.equals(currentClient.getName())){
+                                                UIManager.put("OptionPane.yesButtonText", "End auction");
+                                                UIManager.put("OptionPane.noButtonText", "Cancel auction");
+                                                
+                                                
                                                 int option = JOptionPane.showConfirmDialog(null,
                                                         "End this auction?", "Confirmation", JOptionPane.YES_NO_OPTION);
 
@@ -246,6 +251,13 @@ public class Client extends javax.swing.JFrame implements Observable {
                                                     outputStream.writeUTF("ENDED");
                                                     outputStream.writeObject(auction);
                                                     outputStream.writeUTF(topBidder);
+                                                    outputStream.writeInt(price);
+                                                    outputStream.flush();
+                                                } else {
+                                                    outputStream.writeInt(AUCTION_CANCELED);
+                                                    outputStream.writeUTF(productName);
+                                                    outputStream.writeUTF("CANCELED");
+                                                    outputStream.writeObject(auction);
                                                     outputStream.writeInt(price);
                                                     outputStream.flush();
                                                 }
@@ -337,6 +349,25 @@ public class Client extends javax.swing.JFrame implements Observable {
                                 }
                             }       
                         }
+                        
+                        case (AUCTION_CANCELED) -> {
+                            String pKey = inputStream.readUTF();
+                            String status = inputStream.readUTF();
+                            Auction auction = (Auction)inputStream.readObject();
+                            int price = inputStream.readInt();
+                            
+                            for (Component comp : auctionPanel.getComponents()){
+                                JButton button = (JButton) comp;
+                                String buttonProductName = (String) button.getClientProperty("productName");
+                                
+                                if (buttonProductName.equals(pKey)) {
+                                    button.putClientProperty("Status", status);
+                                    button.setText("Auctioneer: " + auction.getAuctioneerName() + ". Product name: " + auction.getAuctionProductName() + ". Price: " + price
+                                    + " " + status);
+                                    break;  
+                                }
+                            }
+                        }
                     }
                 }
             } catch (IOException e) {
@@ -355,6 +386,7 @@ public class Client extends javax.swing.JFrame implements Observable {
     private final static int ADD_AN_AUCTION = 1;
     private final static int BID_FOR_AN_AUCTION = 2;
     private final static int AUCTION_END = 3;
+    private final static int AUCTION_CANCELED = 4;
     
     private ObjectOutputStream outputStream;
     private ObjectInputStream inputStream;

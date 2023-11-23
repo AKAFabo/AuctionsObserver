@@ -29,6 +29,7 @@ public class Server {
     private final static int ADD_AN_AUCTION = 1;
     private final static int BID_FOR_AN_AUCTION = 2;
     private final static int AUCTION_END = 3;
+    private final static int AUCTION_CANCELED = 4;
     
     public Server(int port) {
         try {
@@ -103,6 +104,15 @@ public class Server {
                             
                             endAuction(prodName, status, auction, winner, price);
                         }
+                        
+                        case (AUCTION_CANCELED) -> {
+                            String prodName = inputStream.readUTF();
+                            String status = inputStream.readUTF();
+                            Auction auction = (Auction)inputStream.readObject();
+                            int price = inputStream.readInt();
+                            
+                            cancelAuction(prodName, status, auction, price);
+                        }
                     }
                           
                 }
@@ -159,6 +169,20 @@ public class Server {
                 client.writeUTF(winner);
                 client.writeInt(price);
                 client.flush();
+            } catch (IOException ex) {
+                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
+    public static void cancelAuction(String prodName, String status, Auction auction, int price){
+        for (ObjectOutputStream client : clients){
+            try {
+                client.writeInt(AUCTION_CANCELED);
+                client.writeUTF(prodName);
+                client.writeUTF(status);
+                client.writeObject(auction);
+                client.writeInt(price);
             } catch (IOException ex) {
                 Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
             }
